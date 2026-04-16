@@ -31,6 +31,7 @@ from config import (
     ARTIST, GEMINI_API_KEY, LYRIA_MODEL,
     SEED_VC, DEMUCS_MODEL, DEVICE,
     OUTPUT_DIR, TEMP_DIR, VOICE_REFERENCE_FILE, MODELS_DIR,
+    get_voice_reference,
 )
 from artist_brain import ArtistBrain
 
@@ -554,12 +555,14 @@ def dereverb_vocals(vocals_path: Path, output_path: Path) -> Path:
 # STEP 4: Voice Conversion con CosyVoice VC (o fallback Seed-VC)
 # ============================================================
 
-def converti_voce(vocals_path: Path, output_path: Path) -> Path:
+def converti_voce(vocals_path: Path, output_path: Path, voice_name: str | None = None) -> Path:
     """Converti la voce usando Seed-VC (migliore intonazione per canto) con fallback CosyVoice."""
-    if not VOICE_REFERENCE_FILE.exists():
+    voice_ref = get_voice_reference(voice_name)
+    if not voice_ref.exists():
         raise FileNotFoundError(
-            f"Reference voice non trovata: {VOICE_REFERENCE_FILE}\n"
-            "Esegui prima: python generate_voice.py"
+            f"Reference voice non trovata: {voice_ref}\n"
+            "Aggiungi la tua voce: python manage_voices.py add mia_voce file.wav\n"
+            "Oppure genera voce AI: python generate_voice.py"
         )
 
     # Seed-VC: migliore per canto (f0_condition preserva melodia)
@@ -578,7 +581,7 @@ def converti_voce(vocals_path: Path, output_path: Path) -> Path:
     cmd = [
         sys.executable, str(wrapper_script),
         "--source", str(vocals_path),
-        "--target", str(VOICE_REFERENCE_FILE),
+        "--target", str(voice_ref),
         "--output", str(output_path.parent),
         "--diffusion-steps", str(SEED_VC["diffusion_steps"]),
         "--f0-condition", str(SEED_VC["f0_condition"]),
@@ -781,7 +784,7 @@ def mix_finale(instrumental_path: Path, vocals_path: Path, output_path: Path,
 # PIPELINE COMPLETA
 # ============================================================
 
-def genera_canzone(tema: str, titolo: str | None = None) -> Path:
+def genera_canzone(tema: str, titolo: str | None = None, voice_name: str | None = None) -> Path:
     """Pipeline completa: tema → canzone finita con voce dell'artista."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     song_temp = TEMP_DIR / timestamp
@@ -819,6 +822,18 @@ def genera_canzone(tema: str, titolo: str | None = None) -> Path:
         console.print("\n[bold]Step 3: Separazione[/bold]")
         separated_dir = song_temp / "separated"
         vocals_path, instrumental_path = separa_vocals(raw_song, separated_dir)
+
+        # Step 3b: Voice Conversion (se voce disponibile)
+        try:
+            voice_ref = get_voice_reference(voice_name)
+            console.print(f"\n[bold]Step 3b: Voice Conversion[/bold] ({voice_ref.parent.name})")
+            converted_path = song_temp / "vocals_converted.wav"
+            converti_voce(vocals_path, converted_path, voice_name)
+            vocals_path = converted_path
+        except FileNotFoundError:
+            console.print("\n[yellow]  Voice conversion saltata (nessuna voce di riferimento)[/yellow]")
+            console.print("  [dim]Usa la voce generata da Lyria. Per usare la tua voce:[/dim]")
+            console.print("  [dim]  python manage_voices.py add mia_voce registrazione.wav[/dim]")
 
         # Step 4: Mix
         console.print("\n[bold]Step 4: Mix[/bold]")
@@ -946,29 +961,23 @@ def main():
     )
     parser.add_argument("--tema", type=str, help="Tema della canzone da generare")
     parser.add_argument("--titolo", type=str, help="Titolo della canzone (opzionale)")
+    parser.add_argument("--voce", type=str, help="Nome profilo voce (es: mia_voce). Vedi: python manage_voices.py list")
     parser.add_argument("--album", type=int, help="Genera un album con N tracce")
     parser.add_argument("--nome-album", type=str, dest="nome_album", help="Nome dell'album")
 
     args = parser.parse_args()
 
-    # Verifica che la voce esista
-    if not VOICE_REFERENCE_FILE.exists():
-        console.print(
-            "[red]Voce dell'artista non trovata![/red]\n"
-            "Esegui prima: [cyan]python generate_voice.py[/cyan]"
-        )
-        sys.exit(1)
-
     if args.album:
         genera_album(args.album, args.nome_album)
     elif args.tema:
-        genera_canzone(args.tema, args.titolo)
+        genera_canzone(args.tema, args.titolo, args.voce)
     else:
         parser.print_help()
         console.print(
             "\n[yellow]Esempi:[/yellow]\n"
             "  python cantautore.py --tema 'nostalgia di un viaggio in treno'\n"
             "  python cantautore.py --tema 'amore perduto' --titolo 'Stelle Cadenti'\n"
+            "  python cantautore.py --tema 'Roma di notte' --voce mia_voce\n"
             "  python cantautore.py --album 10 --nome-album 'Impronte Digitali'"
         )
 

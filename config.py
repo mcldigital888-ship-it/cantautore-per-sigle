@@ -64,7 +64,52 @@ ARTIST = {
 }
 
 # === REFERENCE VOICE ===
+VOICES_DIR = PROJECT_DIR / "voices"
+VOICES_DIR.mkdir(exist_ok=True)
 VOICE_REFERENCE_FILE = VOICE_DIR / "artist_voice.wav"
+
+
+def get_voice_reference(voice_name: str | None = None) -> Path:
+    """Ritorna il path del file reference per una voce.
+    Se voice_name è None, usa la voce default dal config o il legacy file."""
+    if voice_name:
+        # Cerca nella cartella voices/
+        ref = VOICES_DIR / voice_name / "reference.wav"
+        if ref.exists():
+            return ref
+        # Cerca qualsiasi .wav
+        voice_dir = VOICES_DIR / voice_name
+        if voice_dir.exists():
+            wavs = list(voice_dir.glob("*.wav"))
+            if wavs:
+                return wavs[0]
+        raise FileNotFoundError(
+            f"Voce '{voice_name}' non trovata in {VOICES_DIR / voice_name}\n"
+            f"Aggiungi con: python manage_voices.py add {voice_name} file.wav"
+        )
+
+    # Cerca default dal config
+    config_file = VOICES_DIR / "voices_config.json"
+    if config_file.exists():
+        import json
+        with open(config_file, "r") as f:
+            cfg = json.load(f)
+        default_name = cfg.get("default_voice")
+        if default_name:
+            ref = VOICES_DIR / default_name / "reference.wav"
+            if ref.exists():
+                return ref
+
+    # Fallback: legacy file
+    if VOICE_REFERENCE_FILE.exists():
+        return VOICE_REFERENCE_FILE
+
+    raise FileNotFoundError(
+        f"Nessuna voce trovata!\n"
+        f"Opzioni:\n"
+        f"  1. Carica la tua voce: python manage_voices.py add mia_voce file.wav\n"
+        f"  2. Genera voce AI: python generate_voice.py"
+    )
 
 # === PARAMETRI GENERAZIONE ===
 LYRIA_MODEL = "lyria-3-pro-preview"

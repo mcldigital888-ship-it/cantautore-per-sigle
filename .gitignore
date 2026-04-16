@@ -21,6 +21,10 @@ __pycache__/
 brain/*/memory.json
 brain/*/evolution.json
 
+# Voci (file audio grandi, non su git)
+voices/*/*.wav
+voices/*/reference_trimmed.wav
+
 # OS
 .DS_Store
 .snapshots/

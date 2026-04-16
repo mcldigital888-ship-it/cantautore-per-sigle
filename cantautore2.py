@@ -23,6 +23,7 @@ from rich.panel import Panel
 from config import (
     GEMINI_API_KEY, LYRIA_MODEL,
     DEMUCS_MODEL, DEVICE, TEMP_DIR, MODELS_DIR,
+    get_voice_reference,
 )
 from artist_brain import ArtistBrain
 
@@ -319,9 +320,9 @@ Lyrics:
 # PIPELINE - riusa separa_vocals e mix_finale da cantautore.py
 # ============================================================
 
-def genera_canzone_soul(tema: str, titolo: str | None = None) -> Path:
+def genera_canzone_soul(tema: str, titolo: str | None = None, voice_name: str | None = None) -> Path:
     """Pipeline completa per artista 2 (soul/jazz)."""
-    from cantautore import separa_vocals, mix_finale
+    from cantautore import separa_vocals, mix_finale, converti_voce
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     song_temp = TEMP_DIR / f"artist2_{timestamp}"
@@ -359,6 +360,16 @@ def genera_canzone_soul(tema: str, titolo: str | None = None) -> Path:
         separated_dir = song_temp / "separated"
         vocals_path, instrumental_path = separa_vocals(raw_song, separated_dir)
 
+        # Step 3b: Voice Conversion (se voce disponibile)
+        try:
+            voice_ref = get_voice_reference(voice_name)
+            console.print(f"\n[bold]Step 3b: Voice Conversion[/bold] ({voice_ref.parent.name})")
+            converted_path = song_temp / "vocals_converted.wav"
+            converti_voce(vocals_path, converted_path, voice_name)
+            vocals_path = converted_path
+        except FileNotFoundError:
+            console.print("\n[yellow]  Voice conversion saltata (nessuna voce di riferimento)[/yellow]")
+
         # Step 4: Mix
         console.print("\n[bold]Step 4: Mix[/bold]")
         ver_final = song_temp / "final.wav"
@@ -394,11 +405,12 @@ def main():
     )
     parser.add_argument("--tema", type=str, help="Tema della canzone")
     parser.add_argument("--titolo", type=str, help="Titolo (opzionale)")
+    parser.add_argument("--voce", type=str, help="Nome profilo voce (es: mia_voce)")
 
     args = parser.parse_args()
 
     if args.tema:
-        genera_canzone_soul(args.tema, args.titolo)
+        genera_canzone_soul(args.tema, args.titolo, args.voce)
     else:
         parser.print_help()
         console.print(
