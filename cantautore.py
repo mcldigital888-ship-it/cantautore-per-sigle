@@ -784,7 +784,7 @@ def mix_finale(instrumental_path: Path, vocals_path: Path, output_path: Path,
 # PIPELINE COMPLETA
 # ============================================================
 
-def genera_canzone(tema: str, titolo: str | None = None, voice_name: str | None = None) -> Path:
+def genera_canzone(tema: str, titolo: str | None = None, voice_name: str | None = None, export_stems: bool = False) -> Path:
     """Pipeline completa: tema → canzone finita con voce dell'artista."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     song_temp = TEMP_DIR / timestamp
@@ -854,11 +854,24 @@ def genera_canzone(tema: str, titolo: str | None = None, voice_name: str | None 
         testo_output = OUTPUT_DIR / f"{safe_title}_{timestamp}_testo.json"
         shutil.copy2(testo_file, testo_output)
 
+        # Step 6: Export Kit (stems separati per DAW)
+        kit_dir = None
+        if export_stems:
+            console.print("\n[bold]Step 6: Export Kit Stems[/bold]")
+            from export_kit import separa_stems
+            kit_dir = OUTPUT_DIR / f"{safe_title}_{timestamp}_kit"
+            separa_stems(final_path, kit_dir)
+            # Copia anche vocals e instrumental già separati
+            shutil.copy2(str(vocals_path), str(kit_dir / "vocals_original.wav"))
+            shutil.copy2(str(instrumental_path), str(kit_dir / "instrumental_original.wav"))
+            shutil.copy2(testo_file, str(kit_dir / "testo.json"))
+
         console.print(Panel(
             f"[bold green]Canzone completata![/bold green]\n\n"
             f"Titolo: {song_title}\n"
             f"File: {final_path}\n"
-            f"Testo: {testo_output}",
+            f"Testo: {testo_output}"
+            + (f"\nKit stems: {kit_dir}" if kit_dir else ""),
             style="green"
         ))
 
@@ -962,6 +975,8 @@ def main():
     parser.add_argument("--tema", type=str, help="Tema della canzone da generare")
     parser.add_argument("--titolo", type=str, help="Titolo della canzone (opzionale)")
     parser.add_argument("--voce", type=str, help="Nome profilo voce (es: mia_voce). Vedi: python manage_voices.py list")
+    parser.add_argument("--export-stems", action="store_true", dest="export_stems",
+                        help="Esporta kit con tutti gli stems separati (drums, bass, vocals, etc)")
     parser.add_argument("--album", type=int, help="Genera un album con N tracce")
     parser.add_argument("--nome-album", type=str, dest="nome_album", help="Nome dell'album")
 
@@ -970,7 +985,7 @@ def main():
     if args.album:
         genera_album(args.album, args.nome_album)
     elif args.tema:
-        genera_canzone(args.tema, args.titolo, args.voce)
+        genera_canzone(args.tema, args.titolo, args.voce, args.export_stems)
     else:
         parser.print_help()
         console.print(
