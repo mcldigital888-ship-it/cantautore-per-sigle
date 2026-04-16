@@ -1,0 +1,23 @@
+# Google Gemini API (Lyria 3)
+google-genai>=1.0.0
+
+# Audio processing
+demucs>=4.0.0
+pydub>=0.25.1
+soundfile>=0.12.0
+torchaudio>=2.0.0
+librosa>=0.10.0
+
+# Seed-VC (voice conversion)
+seed-vc>=0.1.0
+
+# CosyVoice (voice generation) - installato separatamente via git
+
+# ML / Torch
+torch>=2.0.0
+numpy>=1.24.0
+
+# Utilities
+rich>=13.0.0
+click>=8.0.0
+python-dotenv>=1.0.0

@@ -1,0 +1,29 @@
+# Credenziali
+.env
+
+# Modelli AI (troppo grandi per git)
+models/
+venv/
+venv_tts/
+
+# Output generati
+output/
+output_artist2/
+voice/
+temp/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Brain memory (dati personali dell'artista)
+brain/*/memory.json
+brain/*/evolution.json
+
+# OS
+.DS_Store
+.snapshots/
+
+# Test temporanei
+test_accent.py
