@@ -93,22 +93,63 @@ Si genera automaticamente: dopo ogni canzone, il sistema analizza il testo e sal
 - Google Gemini API key (gratis su aistudio.google.com)
 - ~10GB spazio disco per modelli
 
+## Google Colab (GPU gratis)
+
+Il modo più semplice per iniziare — **zero costi GPU**:
+
+1. Apri `cantautore_colab.ipynb` su [Google Colab](https://colab.research.google.com)
+2. `Runtime → Change runtime type → T4 GPU`
+3. Premi `Ctrl+F9` (Run All)
+4. Inserisci la tua API Key quando richiesto
+5. Genera canzoni!
+
+**Costo:** ~€0.10 per canzone (solo API Google)
+
+## Dashboard Web
+
+Per un'esperienza visuale con player, progress bar e gestione album:
+
+```bash
+python web_app.py
+# Apri http://localhost:5000
+```
+
+## Producer Toolkit
+
+```bash
+# Separa qualsiasi canzone in stems (drums, bass, vocals, other)
+python export_kit.py separa canzone.wav
+
+# Importa una base esterna e cantaci sopra
+python import_base.py --base beat.wav --tema "amore perduto" --voce mia_voce
+
+# Genera con export stems automatico
+python cantautore.py --tema "Roma di notte" --voce mia_voce --export-stems
+
+# Gestisci voci
+python manage_voices.py add mia_voce registrazione.wav
+python manage_voices.py list
+```
+
 ## Struttura
 
 ```
-├── config.py            # Configurazione artista e parametri
-├── cantautore.py        # Pipeline principale
-├── artist_brain.py      # Sistema personalità + memoria
-├── brain/               # DNA e memoria degli artisti
-│   └── cantautore_digitale/
-│       └── dna.json     # Personalità dell'artista
-├── setup_models.py      # Setup modelli AI
-├── generate_voice.py    # Genera voce dell'artista
-├── .env.example         # Template per API keys
-├── models/              # Modelli AI (gitignored)
-├── voice/               # Reference voice (gitignored)
-├── output/              # Canzoni generate (gitignored)
-└── temp/                # File temporanei (gitignored)
+├── config.py             # Configurazione artista e parametri
+├── cantautore.py         # Pipeline principale
+├── cantautore2.py        # Pipeline soul/jazz
+├── artist_brain.py       # Sistema personalità + memoria
+├── web_app.py            # Dashboard web
+├── templates/index.html  # UI dashboard
+├── export_kit.py         # Separazione stems per DAW
+├── import_base.py        # Importa basi esterne
+├── manage_voices.py      # Gestione profili voce
+├── cantautore_colab.ipynb # Notebook Google Colab
+├── setup_runpod.sh       # Setup automatico RunPod
+├── brain/                # DNA e memoria degli artisti
+├── voices/               # Profili voce
+├── models/               # Modelli AI (gitignored)
+├── output/               # Canzoni generate (gitignored)
+└── temp/                 # File temporanei (gitignored)
 ```
 
 ## License

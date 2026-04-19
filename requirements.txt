@@ -17,6 +17,12 @@ seed-vc>=0.1.0
 torch>=2.0.0
 numpy>=1.24.0
 
+# Web Dashboard
+flask>=3.0.0
+
+# Signal processing (import_base mixing)
+scipy>=1.10.0
+
 # Utilities
 rich>=13.0.0
 click>=8.0.0

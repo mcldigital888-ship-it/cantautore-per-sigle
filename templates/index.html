@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cantautore Digitale — Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #e4e4e7; }
+        .glass { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(20px); }
+        .glow { box-shadow: 0 0 40px rgba(139,92,246,0.15); }
+        .progress-bar { transition: width 0.5s ease; }
+        @keyframes pulse-glow { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+        .animate-pulse-glow { animation: pulse-glow 2s infinite; }
+        .step-log { max-height: 200px; overflow-y: auto; }
+        .step-log::-webkit-scrollbar { width: 4px; }
+        .step-log::-webkit-scrollbar-thumb { background: #6d28d9; border-radius: 2px; }
+        audio { width: 100%; height: 40px; border-radius: 8px; }
+        audio::-webkit-media-controls-panel { background: #1a1a2e; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+<!-- Header -->
+<header class="border-b border-white/5 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-xl">🎵</div>
+            <div>
+                <h1 class="text-lg font-semibold text-white">Cantautore Digitale</h1>
+                <p class="text-xs text-zinc-500">Studio di produzione AI</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div id="queue-badge" class="hidden px-3 py-1 rounded-full bg-violet-500/20 text-violet-300 text-xs font-medium">
+                <span id="queue-count">0</span> in coda
+            </div>
+            <button onclick="loadVoices()" class="text-sm text-zinc-400 hover:text-white transition">🎤 Voci</button>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- LEFT: Genera -->
+    <div class="lg:col-span-1 space-y-6">
+
+        <!-- Genera Canzone -->
+        <div class="glass rounded-2xl p-6 glow">
+            <h2 class="text-white font-semibold mb-4 flex items-center gap-2">
+                <span class="text-violet-400">🎵</span> Genera Canzone
+            </h2>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-zinc-500 mb-1 block">Tema *</label>
+                    <textarea id="tema" rows="3" placeholder="Es: nostalgia di un viaggio in treno verso Roma di notte..."
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-violet-500/50 resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="text-xs text-zinc-500 mb-1 block">Titolo (opzionale)</label>
+                    <input id="titolo" type="text" placeholder="Lascia vuoto per generare automaticamente"
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-violet-500/50">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs text-zinc-500 mb-1 block">Voce</label>
+                        <select id="voce" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none">
+                            <option value="">Default (Lyria)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <label class="flex items-center gap-2 text-sm text-zinc-400 cursor-pointer">
+                            <input type="checkbox" id="export_stems" checked class="rounded border-zinc-600 bg-white/5 text-violet-500 focus:ring-violet-500">
+                            Export stems
+                        </label>
+                    </div>
+                </div>
+                <button onclick="generateSong()" id="btn-generate"
+                    class="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-medium text-sm hover:from-violet-500 hover:to-fuchsia-500 transition-all active:scale-[0.98]">
+                    Genera Canzone
+                </button>
+            </div>
+        </div>
+
+        <!-- Genera Album -->
+        <div class="glass rounded-2xl p-6">
+            <h2 class="text-white font-semibold mb-4 flex items-center gap-2">
+                <span class="text-fuchsia-400">📀</span> Genera Album
+            </h2>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-zinc-500 mb-1 block">Temi (uno per riga)</label>
+                    <textarea id="album-temi" rows="6" placeholder="una donna che rivedi dopo 10 anni&#10;l'ultima sigaretta alle 5 di mattina&#10;Roma di notte sotto la pioggia..."
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-fuchsia-500/50 resize-none font-mono text-xs"></textarea>
+                </div>
+                <button onclick="generateAlbum()" id="btn-album"
+                    class="w-full py-3 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white font-medium text-sm hover:from-fuchsia-500 hover:to-pink-500 transition-all active:scale-[0.98]">
+                    Genera Album
+                </button>
+            </div>
+        </div>
+
+        <!-- Upload Voce -->
+        <div class="glass rounded-2xl p-6" id="voice-panel">
+            <h2 class="text-white font-semibold mb-4 flex items-center gap-2">
+                <span class="text-emerald-400">🎤</span> Carica Voce
+            </h2>
+            <div class="space-y-3">
+                <input id="voice-name" type="text" value="mia_voce" placeholder="Nome voce"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none">
+                <label class="block w-full py-8 border-2 border-dashed border-white/10 rounded-xl text-center cursor-pointer hover:border-emerald-500/30 transition">
+                    <input type="file" id="voice-file" accept=".wav,.mp3" class="hidden" onchange="uploadVoice()">
+                    <div class="text-zinc-500 text-sm">Trascina o clicca per caricare .wav</div>
+                    <div class="text-zinc-600 text-xs mt-1">30-60 secondi di canto</div>
+                </label>
+                <div id="voices-list" class="space-y-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CENTER + RIGHT: Progress + Canzoni -->
+    <div class="lg:col-span-2 space-y-6">
+
+        <!-- Active Jobs -->
+        <div id="jobs-panel" class="space-y-4"></div>
+
+        <!-- Songs Library -->
+        <div class="glass rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-white font-semibold flex items-center gap-2">
+                    <span class="text-amber-400">🎧</span> Le tue canzoni
+                </h2>
+                <button onclick="loadSongs()" class="text-xs text-zinc-500 hover:text-white transition">↻ Aggiorna</button>
+            </div>
+            <div id="songs-list" class="space-y-3">
+                <p class="text-zinc-600 text-sm text-center py-8">Nessuna canzone ancora. Genera la prima!</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+const API = '';
+
+// === GENERATE ===
+async function generateSong() {
+    const tema = document.getElementById('tema').value.trim();
+    if (!tema) { alert('Scrivi un tema!'); return; }
+    const btn = document.getElementById('btn-generate');
+    btn.disabled = true; btn.textContent = 'Avvio...';
+    try {
+        const res = await fetch(API + '/api/generate', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+                tema, titolo: document.getElementById('titolo').value.trim(),
+                voce: document.getElementById('voce').value,
+                export_stems: document.getElementById('export_stems').checked,
+            })
+        });
+        const data = await res.json();
+        if (data.job_id) { trackJob(data.job_id); }
+    } catch(e) { alert('Errore: ' + e); }
+    btn.disabled = false; btn.textContent = 'Genera Canzone';
+}
+
+async function generateAlbum() {
+    const raw = document.getElementById('album-temi').value.trim();
+    const temi = raw.split('\n').map(t => t.trim()).filter(t => t);
+    if (!temi.length) { alert('Scrivi almeno un tema!'); return; }
+    const btn = document.getElementById('btn-album');
+    btn.disabled = true; btn.textContent = `Avvio ${temi.length} tracce...`;
+    try {
+        const res = await fetch(API + '/api/generate-album', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+                temi, voce: document.getElementById('voce').value,
+                export_stems: document.getElementById('export_stems').checked,
+            })
+        });
+        const data = await res.json();
+        if (data.job_id) { trackJob(data.job_id); }
+    } catch(e) { alert('Errore: ' + e); }
+    btn.disabled = false; btn.textContent = 'Genera Album';
+}
+
+// === TRACK JOB (SSE) ===
+function trackJob(jobId) {
+    const panel = document.getElementById('jobs-panel');
+    const card = document.createElement('div');
+    card.id = `job-${jobId}`;
+    card.className = 'glass rounded-2xl p-5 glow';
+    card.innerHTML = `
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-violet-400 animate-pulse-glow"></div>
+                <span class="text-sm font-medium text-white">Job ${jobId}</span>
+            </div>
+            <span id="job-${jobId}-status" class="text-xs text-zinc-500">In coda...</span>
+        </div>
+        <div class="w-full bg-white/5 rounded-full h-2 mb-3">
+            <div id="job-${jobId}-bar" class="progress-bar h-2 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500" style="width:0%"></div>
+        </div>
+        <div id="job-${jobId}-step" class="text-sm text-zinc-400 mb-2">Avvio...</div>
+        <div id="job-${jobId}-log" class="step-log space-y-1 text-xs text-zinc-600"></div>
+    `;
+    panel.prepend(card);
+
+    const sse = new EventSource(API + `/api/jobs/${jobId}/progress`);
+    sse.onmessage = (e) => {
+        const d = JSON.parse(e.data);
+        if (d.keepalive) return;
+        const bar = document.getElementById(`job-${jobId}-bar`);
+        const step = document.getElementById(`job-${jobId}-step`);
+        const status = document.getElementById(`job-${jobId}-status`);
+        const log = document.getElementById(`job-${jobId}-log`);
+        if (bar && d.progress >= 0) bar.style.width = d.progress + '%';
+        if (step) step.textContent = `${d.step}${d.detail ? ' — ' + d.detail : ''}`;
+        if (status) status.textContent = `${d.progress}%`;
+        if (log && d.step) {
+            const line = document.createElement('div');
+            line.textContent = `${d.step}: ${d.detail || ''}`;
+            line.className = d.progress === 100 ? 'text-emerald-400' : d.progress < 0 ? 'text-red-400' : 'text-zinc-500';
+            log.appendChild(line);
+            log.scrollTop = log.scrollHeight;
+        }
+        if (d.status === 'completed') {
+            sse.close();
+            if (bar) bar.className = bar.className.replace('from-violet-500 to-fuchsia-500', 'from-emerald-500 to-teal-500');
+            const dot = card.querySelector('.animate-pulse-glow');
+            if (dot) { dot.className = 'w-2 h-2 rounded-full bg-emerald-400'; }
+            if (status) status.textContent = 'Completato!';
+            loadSongs();
+        }
+        if (d.status === 'failed') {
+            sse.close();
+            if (bar) bar.className = bar.className.replace('from-violet-500 to-fuchsia-500', 'from-red-500 to-red-600');
+            const dot = card.querySelector('.animate-pulse-glow');
+            if (dot) { dot.className = 'w-2 h-2 rounded-full bg-red-400'; }
+            if (status) status.textContent = 'Errore';
+        }
+    };
+    sse.onerror = () => sse.close();
+}
+
+// === LOAD SONGS ===
+async function loadSongs() {
+    try {
+        const res = await fetch(API + '/api/songs');
+        const songs = await res.json();
+        const list = document.getElementById('songs-list');
+        if (!songs.length) {
+            list.innerHTML = '<p class="text-zinc-600 text-sm text-center py-8">Nessuna canzone ancora.</p>';
+            return;
+        }
+        list.innerHTML = songs.map(s => `
+            <div class="bg-white/3 rounded-xl p-4 border border-white/5 hover:border-white/10 transition">
+                <div class="flex items-start justify-between mb-2">
+                    <div>
+                        <h3 class="text-white text-sm font-medium">${s.title || s.name}</h3>
+                        <div class="flex items-center gap-3 text-xs text-zinc-500 mt-1">
+                            ${s.duration ? `<span>⏱ ${s.duration}</span>` : ''}
+                            ${s.mood ? `<span>${s.mood}</span>` : ''}
+                            ${s.bpm ? `<span>${s.bpm} BPM</span>` : ''}
+                            <span>${s.size_mb} MB</span>
+                            ${s.has_kit ? '<span class="text-violet-400">📦 Kit</span>' : ''}
+                        </div>
+                    </div>
+                    <a href="${API}/api/download/${s.name}" class="text-xs text-zinc-500 hover:text-white px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 transition">↓</a>
+                </div>
+                <audio controls preload="none" src="${API}/api/audio/${s.name}"></audio>
+            </div>
+        `).join('');
+    } catch(e) { console.error(e); }
+}
+
+// === VOICES ===
+async function loadVoices() {
+    try {
+        const res = await fetch(API + '/api/voices');
+        const voices = await res.json();
+        const select = document.getElementById('voce');
+        select.innerHTML = '<option value="">Default (Lyria)</option>';
+        voices.forEach(v => {
+            select.innerHTML += `<option value="${v.name}" ${v.is_default?'selected':''}>${v.name}${v.is_default?' (default)':''}${v.duration?' — '+v.duration:''}</option>`;
+        });
+        const vlist = document.getElementById('voices-list');
+        vlist.innerHTML = voices.map(v => `
+            <div class="flex items-center justify-between bg-white/3 rounded-lg px-3 py-2 text-xs">
+                <span class="text-white">${v.name} ${v.is_default?'⭐':''}</span>
+                <span class="text-zinc-500">${v.duration||''}</span>
+            </div>
+        `).join('');
+    } catch(e) {}
+}
+
+async function uploadVoice() {
+    const file = document.getElementById('voice-file').files[0];
+    const name = document.getElementById('voice-name').value.trim();
+    if (!file || !name) return;
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('name', name);
+    try {
+        const res = await fetch(API + '/api/upload-voice', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.status === 'ok') { alert(`Voce "${name}" caricata!`); loadVoices(); }
+        else { alert(data.error); }
+    } catch(e) { alert('Errore upload: ' + e); }
+}
+
+// Init
+loadSongs();
+loadVoices();
+setInterval(loadSongs, 30000);
+</script>
+</body>
+</html>
